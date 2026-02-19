@@ -26,8 +26,12 @@
         <h1 class="hero-title">Đình Nhất <span class="amp">&</span> Nguyễn Thuý</h1>
         <p class="hero-sub">Trân trọng mời <span id="inviteeName">bạn</span> đến chung vui trong ngày trọng đại của <span data-host-pronoun>tụi mình</span></p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự</a>
+          <button class="btn btn-primary" style="font-size: inherit;" id="confirmAttendBtn" type="button">
+            <span class="btn-text">Xác nhận tham dự</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
         </div>
+        <p class="hero-confirm-status" id="confirmStatus">Nhấn một lần để xác nhận tham dự.</p>
         <div class="hero-shortcut">
           <a class="btn btn-primary" href="#mung-cuoi">Mừng cưới online</a>
         </div>
@@ -159,70 +163,18 @@
         <button class="shot" data-src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2200&q=80">
           <img alt="Ảnh 2" src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=70">
         </button>
-        <button class="shot" data-src="https://images.unsplash.com/photo-1529634894759-07c16f9f0c1b?auto=format&fit=crop&w=2200&q=80">
-          <img alt="Ảnh 3" src="https://images.unsplash.com/photo-1529634894759-07c16f9f0c1b?auto=format&fit=crop&w=1200&q=70">
+        <button class="shot" data-src="https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?auto=format&fit=crop&w=2200&q=80">
+          <img alt="Ảnh 3" src="https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?auto=format&fit=crop&w=1200&q=70">
         </button>
-        <button class="shot" data-src="https://images.unsplash.com/photo-1529634895393-35c6f39c5b9a?auto=format&fit=crop&w=2200&q=80">
-          <img alt="Ảnh 4" src="https://images.unsplash.com/photo-1529634895393-35c6f39c5b9a?auto=format&fit=crop&w=1200&q=70">
+        <button class="shot" data-src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2200&q=80">
+          <img alt="Ảnh 4" src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=70">
         </button>
-        <button class="shot" data-src="https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=2200&q=80">
-          <img alt="Ảnh 5" src="https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1200&q=70">
+        <button class="shot" data-src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2200&q=80">
+          <img alt="Ảnh 5" src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=70">
         </button>
-        <button class="shot" data-src="https://images.unsplash.com/photo-1529634860162-2cc0f4d06b2b?auto=format&fit=crop&w=2200&q=80">
-          <img alt="Ảnh 6" src="https://images.unsplash.com/photo-1529634860162-2cc0f4d06b2b?auto=format&fit=crop&w=1200&q=70">
+        <button class="shot" data-src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2200&q=80">
+          <img alt="Ảnh 6" src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=70">
         </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- RSVP -->
-  <section class="section" id="rsvp">
-    <div class="container">
-      <div class="section-head">
-        <h2>Xác nhận tham dự</h2>
-        <p>Cho <span data-host-pronoun>tụi mình</span> biết <span class="invitee-pronoun" data-invitee-pronoun>bạn</span> có thể đến chung vui không nha.</p>
-      </div>
-
-      <div class="rsvp-grid">
-        <form class="form glass" id="rsvpForm">
-          <div class="row">
-            <label>
-              <span>Họ tên</span>
-              <input name="name" placeholder="Nguyễn Văn A" required />
-            </label>
-            <label>
-              <span>Số điện thoại</span>
-              <input name="phone" placeholder="09xx..." inputmode="tel" />
-            </label>
-          </div>
-
-          <label>
-            <span>Bạn sẽ tham dự chứ?</span>
-            <select name="attend" required>
-              <option value="">Chọn...</option>
-              <option value="yes">Có, mình sẽ đến 🎉</option>
-              <option value="no">Tiếc quá, mình không đến được</option>
-            </select>
-          </label>
-
-          <div class="row">
-            <label>
-              <span>Số khách đi cùng</span>
-              <input name="guests" type="number" min="0" max="10" value="0" />
-            </label>
-            <label>
-              <span>Lời nhắn</span>
-              <input name="note" placeholder="Gửi lời chúc..." />
-            </label>
-          </div>
-
-          <button class="btn btn-primary" type="submit">
-            <span class="btn-text">Gửi xác nhận</span>
-            <span class="btn-spinner" aria-hidden="true"></span>
-          </button>
-
-          <p class="fine muted">* UI trước. Submit thật sẽ gắn sau.</p>
-        </form>
       </div>
     </div>
   </section>
@@ -242,7 +194,7 @@
             <div class="kv"><span>Ngân hàng</span><b id="giftBankName">VCB</b></div>
             <div class="kv"><span>Số tài khoản</span><b id="giftAccountNumber">0123456789</b></div>
             <div class="kv"><span>Chủ tài khoản</span><b id="giftAccountName">NGUYEN VAN MINH</b></div>
-            <div class="kv"><span>Nội dung CK gợi ý</span><b id="giftTransferNote">Mung cuoi Minh-Lan</b></div>
+            <div class="kv"><span>Nội dung CK gợi ý</span><b style="width: 50%; text-align: end;" id="giftTransferNote">Mung cuoi Minh-Lan</b></div>
           </div>
 
           <div class="gift-actions">

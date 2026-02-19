@@ -1,4 +1,7 @@
 const $ = (sel) => document.querySelector(sel);
+const RSVP_ENDPOINT = "https://script.google.com/macros/s/AKfycbzMSWRugoMbqgHJ21ITPmBscwx1DAIKUoKZbeWYITQCe2sL4MY5XECmsF9u8ENHpdNm/exec";
+const RSVP_STORAGE_PREFIX = "wedding_rsvp_yes_";
+const GUEST_ID_PREFIX = "WEDDING";
 
 function toast(msg) {
   const t = $("#toast");
@@ -48,6 +51,22 @@ function normalizeTransferText(value) {
     .trim();
 }
 
+function normalizeGuestId(value) {
+  if (!value) return "";
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .toUpperCase();
+}
+
+function formatGuestTransferId(value) {
+  const cleaned = normalizeGuestId(value);
+  if (!cleaned) return "";
+  const prefix = normalizeGuestId(GUEST_ID_PREFIX);
+  return cleaned.startsWith(prefix) ? cleaned : `${prefix}${cleaned}`;
+}
+
 function resolveGuestSide(value) {
   const key = normalizeKey(value);
   if (!key) return "groom";
@@ -82,6 +101,8 @@ function buildGiftQrUrl(account) {
 function setupGiftSection(params, inviteeName) {
   const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
   const side = resolveGuestSide(sideRaw);
+  const guestIdRaw = getFirstParam(params, ["guest_id", "guestid", "id", "ma_khach"]);
+  const guestIdForTransfer = formatGuestTransferId(guestIdRaw);
 
   const giftAccounts = {
     groom: {
@@ -90,7 +111,7 @@ function setupGiftSection(params, inviteeName) {
       bankBin: "970422",
       number: "699600006996",
       name: "DO DINH NHAT",
-      note: "mung cuoi DINH NHAT NGUYEN THUY"
+      note: "mung cuoi DINH NHAT"
     },
     bride: {
       title: "Mừng cưới cô dâu",
@@ -98,17 +119,17 @@ function setupGiftSection(params, inviteeName) {
       bankBin: "970422",
       number: "100688886868",
       name: "NGUYEN THI THUY",
-      note: "mung cuoi DINH NHAT NGUYEN THUY"
+      note: "mung cuoi NGUYEN THUY"
     }
   };
 
   const selected = giftAccounts[side];
   const inviteeNameForTransfer = inviteeName
     ? normalizeTransferText(inviteeName)
-    : "Ban";
-  const dynamicNote = inviteeName
-    ? `${inviteeNameForTransfer} ${selected.note}`
-    : `Ban ${selected.note}`;
+    : "";
+  const dynamicNote = [inviteeNameForTransfer, selected.note, guestIdForTransfer]
+    .filter(Boolean)
+    .join(" ");
   const selectedWithDynamicNote = { ...selected, note: dynamicNote };
   const titleEl = $("#giftTitle");
   const bankEl = $("#giftBankName");
@@ -161,6 +182,95 @@ function setupGiftSection(params, inviteeName) {
   });
 }
 
+function setupOneClickRsvp(params, context) {
+  const confirmBtn = $("#confirmAttendBtn");
+  const confirmStatus = $("#confirmStatus");
+  if (!confirmBtn) return;
+
+  const guestId = normalizeParam(
+    getFirstParam(params, ["guest_id", "guestid", "id", "ma_khach"]),
+    120
+  );
+  const guestSideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
+  const guestSide = resolveGuestSide(guestSideRaw);
+  const storageKey = guestId ? `${RSVP_STORAGE_PREFIX}${guestId}` : "";
+  const inviteeName = (context.inviteeName || "").trim();
+  const inviteePronoun = (context.inviteePronoun || "").trim();
+  const hostPronoun = (context.hostPronoun || "tụi mình").trim();
+
+  let inviteeDisplay = "bạn";
+  if (inviteeName && inviteePronoun) {
+    const nameKey = normalizeKey(inviteeName);
+    const pronounKey = normalizeKey(inviteePronoun);
+    inviteeDisplay = nameKey.startsWith(pronounKey)
+      ? inviteeName
+      : `${inviteePronoun} ${inviteeName}`;
+  } else if (inviteeName) {
+    inviteeDisplay = inviteeName;
+  } else if (inviteePronoun) {
+    inviteeDisplay = inviteePronoun;
+  }
+
+  const markConfirmed = () => {
+    confirmBtn.classList.remove("is-loading");
+    confirmBtn.disabled = true;
+    const textEl = confirmBtn.querySelector(".btn-text");
+    if (textEl) textEl.textContent = "Đã xác nhận tham dự";
+    if (confirmStatus) {
+      confirmStatus.textContent = `Cảm ơn ${inviteeDisplay}. ${capitalizeFirst(hostPronoun)} đã nhận được xác nhận.`;
+    }
+  };
+
+  if (storageKey && localStorage.getItem(storageKey) === "YES") {
+    markConfirmed();
+    return;
+  }
+
+  if (!guestId) {
+    confirmBtn.disabled = true;
+    if (confirmStatus) confirmStatus.textContent = "Thiếu mã khách mời, chưa thể xác nhận.";
+    return;
+  }
+
+  confirmBtn.addEventListener("click", async () => {
+    if (!RSVP_ENDPOINT || RSVP_ENDPOINT.includes("PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
+      toast("Chưa cấu hình endpoint RSVP");
+      return;
+    }
+
+    confirmBtn.classList.add("is-loading");
+    confirmBtn.disabled = true;
+
+    const payload = {
+      guest_id: guestId,
+      response: "YES",
+      submitted_at: new Date().toISOString(),
+      ten_nguoi_moi: context.inviteeName || "",
+      xung_ho: context.inviteePronoun || "",
+      xung_ho_minh: context.hostPronoun || "",
+      khach: guestSide,
+      page_url: window.location.href
+    };
+
+    try {
+      await fetch(RSVP_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      if (storageKey) localStorage.setItem(storageKey, "YES");
+      markConfirmed();
+      toast("Đã xác nhận tham dự");
+    } catch {
+      confirmBtn.classList.remove("is-loading");
+      confirmBtn.disabled = false;
+      if (confirmStatus) confirmStatus.textContent = "Không gửi được lúc này, vui lòng thử lại.";
+      toast("Không gửi được xác nhận");
+    }
+  });
+}
+
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
   const inviteeName = normalizeParam(
@@ -195,6 +305,7 @@ function applyInviteeParams() {
   }
 
   setupGiftSection(params, inviteeName);
+  setupOneClickRsvp(params, { inviteeName, inviteePronoun, hostPronoun });
 }
 
 applyInviteeParams();
@@ -252,16 +363,3 @@ async function shareLink() {
     toast("Không thể chia sẻ lúc này.");
   }
 }
-
-// RSVP submit (UI-only)
-$("#rsvpForm")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const form = e.currentTarget;
-  form.classList.add("loading");
-
-  setTimeout(() => {
-    form.classList.remove("loading");
-    toast("Đã gửi RSVP (demo) 💛");
-    form.reset();
-  }, 900);
-});
