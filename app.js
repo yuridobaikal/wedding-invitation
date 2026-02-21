@@ -93,18 +93,48 @@ function buildGiftQrUrl(account) {
   return `https://img.vietqr.io/image/${bankBin}-${account.number}-print.png?addInfo=${addInfo}&accountName=${accountName}`;
 }
 
+function setupCeremonyInfo(params) {
+  const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
+  const side = resolveGuestSide(sideRaw);
+  const ceremonyTitleEl = $("#ceremonyTitle");
+  const ceremonyPlaceEl = $("#ceremonyPlace");
+  if (!ceremonyTitleEl && !ceremonyPlaceEl) return;
+
+  const ceremonyBySide = {
+    groom: {
+      title: "Thông tin Lễ Thành Hôn",
+      place: "Xóm Hoa Nam, Thôn Hội, Xã Song Lãng, Huyện Vũ Thư, Tỉnh Thái Bình"
+    },
+    bride: {
+      title: "Thông tin Lễ Vu Quy",
+      place: "Xóm Đông Cường, Thôn Trung, Xã Song Lãng, Huyện Vũ Thư, Tỉnh Thái Bình"
+    }
+  };
+
+  const selected = ceremonyBySide[side] || ceremonyBySide.groom;
+  if (ceremonyTitleEl) ceremonyTitleEl.textContent = selected.title;
+  if (ceremonyPlaceEl) ceremonyPlaceEl.textContent = selected.place;
+}
+
 function setupIntimateMealInfo(params) {
   const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
   const side = resolveGuestSide(sideRaw);
+  const mealTimeEl = $("#intimateMealTime");
   const mealPlaceEl = $("#intimateMealPlace");
-  if (!mealPlaceEl) return;
+  if (!mealTimeEl && !mealPlaceEl) return;
+
+  const mealTimeBySide = {
+    groom: "16:00 • Thứ Bảy 28/03/2026",
+    bride: "07:00 • Chủ Nhật 29/03/2026"
+  };
 
   const mealPlaceBySide = {
     groom: "Tại nhà trai: Xóm Hoa Nam, Thôn Hội, Song Lãng, Vũ Thư, Thái Bình",
     bride: "Tại nhà gái: Xóm Đông Cường, Thôn Trung, Song Lãng, Vũ Thư, Thái Bình"
   };
 
-  mealPlaceEl.textContent = mealPlaceBySide[side] || mealPlaceBySide.groom;
+  if (mealTimeEl) mealTimeEl.textContent = mealTimeBySide[side] || mealTimeBySide.groom;
+  if (mealPlaceEl) mealPlaceEl.textContent = mealPlaceBySide[side] || mealPlaceBySide.groom;
 }
 
 function setupGiftSection(params) {
@@ -284,6 +314,7 @@ function setupOneClickRsvp(params) {
 
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
+  setupCeremonyInfo(params);
   setupIntimateMealInfo(params);
   setupGiftSection(params);
   setupOneClickRsvp(params);
