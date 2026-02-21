@@ -25,11 +25,6 @@ function getFirstParam(params, keys) {
   return "";
 }
 
-function capitalizeFirst(value) {
-  if (!value) return "";
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
 function normalizeKey(value) {
   if (!value) return "";
   return value
@@ -98,11 +93,17 @@ function buildGiftQrUrl(account) {
   return `https://img.vietqr.io/image/${bankBin}-${account.number}-print.png?addInfo=${addInfo}&accountName=${accountName}`;
 }
 
-function setupGiftSection(params, inviteeName) {
+function setupGiftSection(params) {
   const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
   const side = resolveGuestSide(sideRaw);
-  const guestIdRaw = getFirstParam(params, ["guest_id", "guestid", "id", "ma_khach"]);
+  const guestIdRaw = getFirstParam(params, ["guest_id", "guestid", "ma_khach"]);
   const guestIdForTransfer = formatGuestTransferId(guestIdRaw);
+  const inviteeNameRaw = normalizeParam(
+    getFirstParam(params, ["ten_nguoi_moi", "ten", "name", "guest"]),
+    120
+  );
+  const inviteeNameForTransfer = normalizeTransferText(inviteeNameRaw);
+  const hasInviteeName = Boolean(inviteeNameForTransfer);
 
   const giftAccounts = {
     groom: {
@@ -124,18 +125,16 @@ function setupGiftSection(params, inviteeName) {
   };
 
   const selected = giftAccounts[side];
-  const inviteeNameForTransfer = inviteeName
-    ? normalizeTransferText(inviteeName)
+  const dynamicNote = hasInviteeName
+    ? [inviteeNameForTransfer, selected.note, guestIdForTransfer].filter(Boolean).join(" ")
     : "";
-  const dynamicNote = [inviteeNameForTransfer, selected.note, guestIdForTransfer]
-    .filter(Boolean)
-    .join(" ");
   const selectedWithDynamicNote = { ...selected, note: dynamicNote };
   const titleEl = $("#giftTitle");
   const bankEl = $("#giftBankName");
   const accountEl = $("#giftAccountNumber");
   const nameEl = $("#giftAccountName");
   const noteEl = $("#giftTransferNote");
+  const noteRowEl = noteEl?.closest(".kv");
   const qrEl = $("#giftQrImg");
   const qrCardEl = qrEl?.closest(".gift-qr");
   const copyBtn = $("#copyAccountBtn");
@@ -146,6 +145,13 @@ function setupGiftSection(params, inviteeName) {
   if (accountEl) accountEl.textContent = selected.number;
   if (nameEl) nameEl.textContent = selected.name;
   if (noteEl) noteEl.textContent = dynamicNote;
+  if (hasInviteeName) {
+    noteRowEl?.classList.remove("is-hidden");
+    copyNoteBtn?.classList.remove("is-hidden");
+  } else {
+    noteRowEl?.classList.add("is-hidden");
+    copyNoteBtn?.classList.add("is-hidden");
+  }
   if (qrEl) {
     const qrUrl = buildGiftQrUrl(selectedWithDynamicNote);
     const hideQrCard = () => qrCardEl?.classList.add("is-hidden");
@@ -173,6 +179,10 @@ function setupGiftSection(params, inviteeName) {
   });
 
   copyNoteBtn?.addEventListener("click", async () => {
+    if (!dynamicNote) {
+      toast("Không có nội dung chuyển khoản gợi ý");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(dynamicNote);
       toast("Đã copy nội dung chuyển khoản");
@@ -182,34 +192,30 @@ function setupGiftSection(params, inviteeName) {
   });
 }
 
-function setupOneClickRsvp(params, context) {
+function setupOneClickRsvp(params) {
   const confirmBtn = $("#confirmAttendBtn");
   const confirmStatus = $("#confirmStatus");
   if (!confirmBtn) return;
 
   const guestId = normalizeParam(
-    getFirstParam(params, ["guest_id", "guestid", "id", "ma_khach"]),
+    getFirstParam(params, ["guest_id", "guestid", "ma_khach"]),
     120
   );
   const guestSideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
   const guestSide = resolveGuestSide(guestSideRaw);
-  const storageKey = guestId ? `${RSVP_STORAGE_PREFIX}${guestId}` : "";
-  const inviteeName = (context.inviteeName || "").trim();
-  const inviteePronoun = (context.inviteePronoun || "").trim();
-  const hostPronoun = (context.hostPronoun || "tụi mình").trim();
-
-  let inviteeDisplay = "bạn";
-  if (inviteeName && inviteePronoun) {
-    const nameKey = normalizeKey(inviteeName);
-    const pronounKey = normalizeKey(inviteePronoun);
-    inviteeDisplay = nameKey.startsWith(pronounKey)
-      ? inviteeName
-      : `${inviteePronoun} ${inviteeName}`;
-  } else if (inviteeName) {
-    inviteeDisplay = inviteeName;
-  } else if (inviteePronoun) {
-    inviteeDisplay = inviteePronoun;
+  if (!guestId) {
+    confirmBtn.style.display = "none";
+    if (confirmStatus) confirmStatus.style.display = "none";
+    return;
   }
+
+  confirmBtn.hidden = false;
+  confirmBtn.style.display = "";
+  if (confirmStatus) {
+    confirmStatus.hidden = false;
+    confirmStatus.style.display = "";
+  }
+  const storageKey = `${RSVP_STORAGE_PREFIX}${guestId}`;
 
   const markConfirmed = () => {
     confirmBtn.classList.remove("is-loading");
@@ -217,18 +223,12 @@ function setupOneClickRsvp(params, context) {
     const textEl = confirmBtn.querySelector(".btn-text");
     if (textEl) textEl.textContent = "Đã xác nhận tham dự";
     if (confirmStatus) {
-      confirmStatus.textContent = `Cảm ơn ${inviteeDisplay}. ${capitalizeFirst(hostPronoun)} đã nhận được xác nhận.`;
+      confirmStatus.textContent = "Cảm ơn bạn. Tụi mình đã nhận được xác nhận.";
     }
   };
 
   if (storageKey && localStorage.getItem(storageKey) === "YES") {
     markConfirmed();
-    return;
-  }
-
-  if (!guestId) {
-    confirmBtn.disabled = true;
-    if (confirmStatus) confirmStatus.textContent = "Thiếu mã khách mời, chưa thể xác nhận.";
     return;
   }
 
@@ -245,9 +245,6 @@ function setupOneClickRsvp(params, context) {
       guest_id: guestId,
       response: "YES",
       submitted_at: new Date().toISOString(),
-      ten_nguoi_moi: context.inviteeName || "",
-      xung_ho: context.inviteePronoun || "",
-      xung_ho_minh: context.hostPronoun || "",
       khach: guestSide,
       page_url: window.location.href
     };
@@ -273,39 +270,8 @@ function setupOneClickRsvp(params, context) {
 
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
-  const inviteeName = normalizeParam(
-    getFirstParam(params, ["ten_nguoi_moi", "ten", "name", "guest"])
-  );
-  const inviteePronoun = normalizeParam(
-    getFirstParam(params, ["xung_ho", "xungho", "pronoun"])
-  );
-  const hostPronoun = normalizeParam(
-    getFirstParam(params, ["xung_ho_minh", "xungho_minh", "xung_ho_ben_moi", "host_pronoun"])
-  );
-
-  if (inviteeName) {
-    const nameEl = $("#inviteeName");
-    if (nameEl) nameEl.textContent = inviteeName;
-  }
-
-  if (inviteePronoun) {
-    document.querySelectorAll("[data-invitee-pronoun]").forEach((el) => {
-      el.textContent = inviteePronoun;
-    });
-  }
-
-  if (hostPronoun) {
-    document.querySelectorAll("[data-host-pronoun]").forEach((el) => {
-      el.textContent = hostPronoun;
-    });
-    const hostPronounCap = capitalizeFirst(hostPronoun);
-    document.querySelectorAll("[data-host-pronoun-cap]").forEach((el) => {
-      el.textContent = hostPronounCap;
-    });
-  }
-
-  setupGiftSection(params, inviteeName);
-  setupOneClickRsvp(params, { inviteeName, inviteePronoun, hostPronoun });
+  setupGiftSection(params);
+  setupOneClickRsvp(params);
 }
 
 applyInviteeParams();
