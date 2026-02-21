@@ -129,6 +129,12 @@ img{ display:block; max-width:100%; }
   align-items: stretch;
 }
 
+.hero-right{
+  display:grid;
+  gap: 12px;
+  align-content:start;
+}
+
 .pill{
   display:inline-flex;
   gap: 10px;
@@ -222,6 +228,25 @@ img{ display:block; max-width:100%; }
   flex-direction:column;
   justify-content:space-between;
   min-height: 360px;
+}
+.meal-card{
+  padding: 14px 16px;
+  display:grid;
+  gap: 6px;
+}
+.meal-title{
+  font-weight: 600;
+  font-size: .96rem;
+  color: var(--muted);
+}
+.meal-time{
+  font-weight: 600;
+}
+.meal-place{
+  margin: 0;
+  color: rgba(255,255,255,.88);
+  font-size: .92rem;
+  line-height: 1.5;
 }
 .card-top{
   display:flex;
@@ -719,6 +744,7 @@ input:focus, select:focus{ border-color: rgba(255,255,255,.24); }
 /* Responsive */
 @media (max-width: 940px){
   .hero-grid{ grid-template-columns: 1fr; }
+  .hero-right{ gap: 10px; }
   .hero-card{ min-height: unset; }
   .cards-3{ grid-template-columns: 1fr; }
   .rsvp-grid{ grid-template-columns: 1fr; }

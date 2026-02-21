@@ -93,6 +93,20 @@ function buildGiftQrUrl(account) {
   return `https://img.vietqr.io/image/${bankBin}-${account.number}-print.png?addInfo=${addInfo}&accountName=${accountName}`;
 }
 
+function setupIntimateMealInfo(params) {
+  const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
+  const side = resolveGuestSide(sideRaw);
+  const mealPlaceEl = $("#intimateMealPlace");
+  if (!mealPlaceEl) return;
+
+  const mealPlaceBySide = {
+    groom: "Tại nhà trai: Xóm Hoa Nam, Thôn Hội, Song Lãng, Vũ Thư, Thái Bình",
+    bride: "Tại nhà gái: Xóm Đông Cường, Thôn Trung, Song Lãng, Vũ Thư, Thái Bình"
+  };
+
+  mealPlaceEl.textContent = mealPlaceBySide[side] || mealPlaceBySide.groom;
+}
+
 function setupGiftSection(params) {
   const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
   const side = resolveGuestSide(sideRaw);
@@ -270,6 +284,7 @@ function setupOneClickRsvp(params) {
 
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
+  setupIntimateMealInfo(params);
   setupGiftSection(params);
   setupOneClickRsvp(params);
 }
