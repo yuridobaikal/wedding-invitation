@@ -718,6 +718,27 @@ input:focus, select:focus{ border-color: rgba(255,255,255,.24); }
   cursor:pointer;
 }
 
+/* Background music */
+.music-toggle{
+  position: fixed;
+  right: 14px;
+  bottom: 76px;
+  z-index: 72;
+  padding: 10px 13px;
+}
+.music-toggle.is-on{
+  background: linear-gradient(90deg, rgba(var(--accent2),.34), rgba(var(--accent),.32));
+  border-color: rgba(255,255,255,.22);
+}
+.music-toggle-icon{
+  font-size: 1rem;
+  line-height: 1;
+}
+.music-toggle-text{
+  font-size: .9rem;
+  font-weight: 600;
+}
+
 /* Toast */
 .toast{
   position: fixed;
@@ -796,5 +817,9 @@ input:focus, select:focus{ border-color: rgba(255,255,255,.24); }
   .hero-title{ font-size: clamp(2.55rem, 13vw, 3.2rem); }
   .hero-sub{ font-size: .96rem; }
   .invite-line{ font-size: .92rem; }
+  .music-toggle{
+    right: 10px;
+    bottom: 70px;
+  }
   .map-frame iframe{ height: 280px; }
 }

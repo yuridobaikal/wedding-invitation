@@ -2,6 +2,7 @@ const $ = (sel) => document.querySelector(sel);
 const RSVP_ENDPOINT = "https://script.google.com/macros/s/AKfycbzMSWRugoMbqgHJ21ITPmBscwx1DAIKUoKZbeWYITQCe2sL4MY5XECmsF9u8ENHpdNm/exec";
 const RSVP_STORAGE_PREFIX = "wedding_rsvp_yes_";
 const GUEST_ID_PREFIX = "WEDDING";
+const BGM_STORAGE_KEY = "wedding_bgm_on";
 
 function toast(msg) {
   const t = $("#toast");
@@ -91,6 +92,79 @@ function buildGiftQrUrl(account) {
   const addInfo = encodeURIComponent(account.note || "");
   const accountName = encodeURIComponent(account.name || "");
   return `https://img.vietqr.io/image/${bankBin}-${account.number}-print.png?addInfo=${addInfo}&accountName=${accountName}`;
+}
+
+function setupBackgroundMusic() {
+  const audio = $("#bgMusic");
+  const btn = $("#musicToggleBtn");
+  const textEl = $("#musicToggleText");
+  if (!audio || !btn || !textEl) return;
+
+  audio.volume = 0.25;
+  const savedPreference = localStorage.getItem(BGM_STORAGE_KEY);
+  const isDesktopLike = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  let isEnabled = savedPreference === "1" || (savedPreference === null && isDesktopLike);
+  let hasRetryListeners = false;
+
+  const updateUi = () => {
+    btn.classList.toggle("is-on", isEnabled);
+    btn.setAttribute("aria-pressed", isEnabled ? "true" : "false");
+    textEl.textContent = isEnabled ? "Tắt nhạc" : "Bật nhạc";
+  };
+
+  const retryPlay = async () => {
+    if (!isEnabled) return;
+    try {
+      await audio.play();
+      window.removeEventListener("pointerdown", retryPlay);
+      window.removeEventListener("keydown", retryPlay);
+      hasRetryListeners = false;
+    } catch {
+      // Keep listening for the next user interaction.
+    }
+  };
+
+  const attachRetryListeners = () => {
+    if (hasRetryListeners) return;
+    hasRetryListeners = true;
+    window.addEventListener("pointerdown", retryPlay, { passive: true });
+    window.addEventListener("keydown", retryPlay);
+  };
+
+  const detachRetryListeners = () => {
+    if (!hasRetryListeners) return;
+    window.removeEventListener("pointerdown", retryPlay);
+    window.removeEventListener("keydown", retryPlay);
+    hasRetryListeners = false;
+  };
+
+  const enableMusic = async () => {
+    isEnabled = true;
+    localStorage.setItem(BGM_STORAGE_KEY, "1");
+    updateUi();
+    try {
+      await audio.play();
+      detachRetryListeners();
+    } catch {
+      attachRetryListeners();
+    }
+  };
+
+  const disableMusic = () => {
+    isEnabled = false;
+    localStorage.setItem(BGM_STORAGE_KEY, "0");
+    audio.pause();
+    detachRetryListeners();
+    updateUi();
+  };
+
+  btn.addEventListener("click", () => {
+    if (isEnabled) disableMusic();
+    else void enableMusic();
+  });
+
+  updateUi();
+  if (isEnabled) void enableMusic();
 }
 
 function setupInviteeText(params) {
@@ -288,8 +362,8 @@ function setupOneClickRsvp(params) {
   confirmBtn.hidden = false;
   confirmBtn.style.display = "";
   if (confirmStatus) {
-    confirmStatus.hidden = false;
-    confirmStatus.style.display = "";
+    confirmStatus.hidden = true;
+    confirmStatus.style.display = "none";
   }
   const storageKey = `${RSVP_STORAGE_PREFIX}${guestId}`;
 
@@ -298,9 +372,6 @@ function setupOneClickRsvp(params) {
     confirmBtn.disabled = true;
     const textEl = confirmBtn.querySelector(".btn-text");
     if (textEl) textEl.textContent = "Đã xác nhận tham dự";
-    if (confirmStatus) {
-      confirmStatus.textContent = "Cảm ơn bạn. Tụi mình đã nhận được xác nhận.";
-    }
   };
 
   if (storageKey && localStorage.getItem(storageKey) === "YES") {
@@ -338,7 +409,11 @@ function setupOneClickRsvp(params) {
     } catch {
       confirmBtn.classList.remove("is-loading");
       confirmBtn.disabled = false;
-      if (confirmStatus) confirmStatus.textContent = "Không gửi được lúc này, vui lòng thử lại.";
+      if (confirmStatus) {
+        confirmStatus.textContent = "Không gửi được lúc này, vui lòng thử lại.";
+        confirmStatus.hidden = false;
+        confirmStatus.style.display = "";
+      }
       toast("Không gửi được xác nhận");
     }
   });
@@ -346,6 +421,7 @@ function setupOneClickRsvp(params) {
 
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
+  setupBackgroundMusic();
   setupInviteeText(params);
   setupCeremonyInfo(params);
   setupIntimateMealInfo(params);
