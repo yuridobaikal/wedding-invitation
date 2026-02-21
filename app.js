@@ -93,6 +93,38 @@ function buildGiftQrUrl(account) {
   return `https://img.vietqr.io/image/${bankBin}-${account.number}-print.png?addInfo=${addInfo}&accountName=${accountName}`;
 }
 
+function setupInviteeText(params) {
+  const inviteeName = normalizeParam(
+    getFirstParam(params, ["ten_nguoi_moi", "ten", "name", "guest"]),
+    120
+  );
+  const inviteePronoun = normalizeParam(
+    getFirstParam(params, ["xung_ho", "xungho", "pronoun"]),
+    60
+  );
+  const hostPronoun = normalizeParam(
+    getFirstParam(params, ["xung_ho_minh", "xungho_minh", "xung_ho_ben_moi", "host_pronoun"]),
+    60
+  );
+
+  if (inviteeName) {
+    const inviteeNameEl = $("#inviteeName");
+    if (inviteeNameEl) inviteeNameEl.textContent = inviteeName;
+  }
+
+  if (inviteePronoun) {
+    document.querySelectorAll("[data-invitee-pronoun]").forEach((el) => {
+      el.textContent = inviteePronoun;
+    });
+  }
+
+  if (hostPronoun) {
+    document.querySelectorAll("[data-host-pronoun]").forEach((el) => {
+      el.textContent = hostPronoun;
+    });
+  }
+}
+
 function setupCeremonyInfo(params) {
   const sideRaw = getFirstParam(params, ["khach", "guest_side", "side", "phe", "ben"]);
   const side = resolveGuestSide(sideRaw);
@@ -314,6 +346,7 @@ function setupOneClickRsvp(params) {
 
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
+  setupInviteeText(params);
   setupCeremonyInfo(params);
   setupIntimateMealInfo(params);
   setupGiftSection(params);
