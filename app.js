@@ -167,6 +167,13 @@ function setupBackgroundMusic() {
   if (isEnabled) void enableMusic();
 }
 
+function setupGalleryLayout() {
+  const galleryEl = document.querySelector("#gallery .masonry");
+  if (!galleryEl) return;
+  const shotCount = galleryEl.querySelectorAll(".shot").length;
+  galleryEl.classList.toggle("single", shotCount === 1);
+}
+
 function setupInviteeText(params) {
   const inviteeName = normalizeParam(
     getFirstParam(params, ["ten_nguoi_moi", "ten", "name", "guest"]),
@@ -421,6 +428,7 @@ function setupOneClickRsvp(params) {
 
 function applyInviteeParams() {
   const params = new URLSearchParams(window.location.search);
+  setupGalleryLayout();
   setupBackgroundMusic();
   setupInviteeText(params);
   setupCeremonyInfo(params);
@@ -450,7 +458,8 @@ const lbClose = $("#lbClose");
 
 document.querySelectorAll(".shot").forEach(btn => {
   btn.addEventListener("click", () => {
-    const src = btn.dataset.src;
+    const src = btn.dataset.src || btn.querySelector("img")?.getAttribute("src") || "";
+    if (!src) return;
     lbImg.src = src;
     lb.classList.add("open");
     lb.setAttribute("aria-hidden", "false");
